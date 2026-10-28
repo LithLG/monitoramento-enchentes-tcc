@@ -1,0 +1,18 @@
+{
+  "name": "tcc-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor de ingestão do protótipo de monitoramento de enchentes (ESP32 → Node.js → MySQL → Python)",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.24.5"
+  }
+}

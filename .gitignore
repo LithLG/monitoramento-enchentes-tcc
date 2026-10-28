@@ -1,0 +1,9 @@
+# Senhas: nunca enviar ao GitHub (use env-exemplo.txt e config.exemplo.h)
+.env
+no_sensor/config.h
+
+# Dependências: reinstale com "npm install" e "pip install -r requirements.txt"
+node_modules/
+.venv/
+__pycache__/
+.pytest_cache/

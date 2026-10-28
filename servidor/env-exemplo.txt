@@ -1,0 +1,24 @@
+# Copie este arquivo para um arquivo chamado ".env" (na mesma pasta) e preencha a senha.
+# O .env guarda a senha do banco: não coloque no TCC nem compartilhe.
+
+# Porta HTTP onde os ESP32 enviam as leituras
+PORT=3000
+
+# Banco MySQL (usuário criado pelo banco/03_usuario_app.sql)
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=tcc_enchentes
+DB_USER=tcc_app
+DB_PASSWORD=
+
+# Microserviço Python de classificação (pasta classificador). Ele usa este mesmo .env
+# para achar o banco, então a senha fica num lugar só.
+# Vazio: as leituras ficam "não classificadas" e são classificadas depois.
+PYTHON_URL=http://127.0.0.1:8000
+
+# A cada quantos ms o servidor tenta classificar as leituras pendentes
+CLASSIFY_INTERVAL_MS=30000
+
+# Anúncio na rede para os ESP32 acharem o servidor sozinhos (UDP)
+DISCOVERY_PORT=4210
+DISCOVERY_INTERVAL_MS=2000

@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
 * text=auto
+# Os .bat do Windows precisam de fim de linha CRLF para rodar no cmd.
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.pdf binary
