@@ -1,5 +1,6 @@
 # Senhas: nunca enviar ao GitHub (use env-exemplo.txt e config.exemplo.h)
 .env
+.env.banca
 no_sensor/config.h
 
 # Dependências: reinstale com "npm install" e "pip install -r requirements.txt"

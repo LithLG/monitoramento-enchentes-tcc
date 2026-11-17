@@ -394,6 +394,15 @@ export function createDetailView(root, { nodeId, openEditNode, openExplain, open
   const series = readSeries();
   let rangeKey = readStorage('painel-periodo') ?? '1h';
   let customRange = null;
+  const linkedPeriod = new URLSearchParams(location.hash.split('?')[1]);
+  const linkedFrom = Date.parse(linkedPeriod.get('de') ?? '');
+  const linkedTo = Date.parse(linkedPeriod.get('ate') ?? '');
+  if (Number.isFinite(linkedFrom) && Number.isFinite(linkedTo) && linkedFrom < linkedTo) {
+    rangeKey = 'custom';
+    customRange = { fromMs: linkedFrom, toMs: linkedTo };
+    $('#dt-from', root).value = toLocalInputValue(linkedFrom);
+    $('#dt-to', root).value = toLocalInputValue(linkedTo);
+  }
   let node = null;
   let overview = null;
   let historyTimer = null;

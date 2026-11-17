@@ -23,6 +23,7 @@ function announceOnAllNetworks(socket, message, discoveryPort) {
 }
 
 function startDiscoveryBeacon({ httpPort, discoveryPort, intervalMs, logger = console }) {
+  if (intervalMs === 0) return () => {};
   const socket = dgram.createSocket('udp4');
   const message = `${MESSAGE_PREFIX}${httpPort}`;
   let timer = null;
