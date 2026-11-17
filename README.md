@@ -1,6 +1,49 @@
-# Protótipo de monitoramento de enchentes e prevenção usando inteligência artificial
+# Protótipo de monitoramento de enchentes e alerta preventivo baseado em inteligência artificial
 
 Prova de Conceito de Internet das Coisas desenvolvida como Trabalho de Conclusão de Curso.
+
+[Ler o artigo final (PDF, 33 páginas)](docs/artigo-final.pdf) · [Consultar os dados dos ensaios](#dados-dos-ensaios)
+
+## Apresentação para a banca
+
+O painel pode reproduzir os ensaios no notebook sem internet e com os ESP32 desligados. A [cópia do MySQL para a banca](banco/historico-banca.zip) contém 97.790 leituras gravadas de 6 de outubro a 1º de novembro de 2026, 92.272 classificações, 15 calibrações, dois conjuntos de limiares e uma conferência com régua. Os TSVs no fim deste README são recortes para análise.
+
+### Preparar o notebook uma vez
+
+1. No Windows, instale o MySQL Server 8.4, configure o serviço para iniciar com o Windows e guarde a senha de root. Instale o Node.js 20.6 ou superior com npm. Use o fuso de Brasília para ver os mesmos horários do artigo.
+2. Copie ou extraia o projeto em `C:\TCC` (o README deve estar em `C:\TCC\README.md`). Extraia `banco\historico-banca.zip` para obter `C:\TCC\banco\historico.sql`. Ajuste os caminhos abaixo se usar outra pasta.
+3. Abra o **MySQL 8.4 Command Line Client** como root. Execute as linhas abaixo, uma de cada vez, em uma instalação nova. Escolha uma senha própria para o usuário de leitura. Se o banco `tcc_banca` já existir, confira a contagem antes de importar novamente. O script `criar_banco.sql` da instalação ao vivo apaga e recria o banco operacional e é dispensável para esta apresentação.
+
+   ```sql
+   CREATE DATABASE tcc_banca CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+   USE tcc_banca;
+   source C:/TCC/banco/historico.sql
+   SELECT COUNT(*) FROM reading;
+   CREATE USER 'banca_leitura'@'localhost' IDENTIFIED BY 'SUA_SENHA_AQUI';
+   GRANT SELECT ON tcc_banca.* TO 'banca_leitura'@'localhost';
+   ```
+
+4. A consulta deve retornar **97790**. Em um PowerShell, instale as dependências e crie a configuração da apresentação:
+
+   ```powershell
+   cd C:\TCC\servidor
+   npm.cmd ci
+   notepad .env.banca
+   ```
+
+   Confirme a criação do arquivo e salve nele estas linhas, usando a senha do passo 3:
+
+   ```dotenv
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_PASSWORD="SUA_SENHA_AQUI"
+   ```
+
+### No dia da apresentação
+
+Dê dois cliques em **`apresentar_banca.bat`** na pasta do projeto. Ele abre a caixa 2 no período de **01/11/2026, das 18h19 às 18h24**. Em **Histórico**, clique em **Replay**. Às **18h21min08s**, a regra `ESCALADA_SOLO_CHUVA` registrou Risco com lâmina de 15,9 mm, chuva e solo encharcado. O trecho tem 20 leituras, 11 em Atenção e 9 em Risco. A indicação de sensor sem sinal no modo ao vivo é esperada com a maquete desligada.
+
+Para explorar outro ensaio, abra a caixa desejada e use **Histórico → Escolher… → De / Até → Aplicar**. O gráfico e a linha do tempo mostram o período escolhido. Feche a janela do servidor ao terminar. O usuário da banca tem acesso de leitura. Para fazer novas medições, siga a instalação do sistema ao vivo abaixo.
 
 Uma maquete representa três pontos de um mesmo rio, nas zonas rural, periurbana e urbana. Em cada ponto, um ESP32 lê sensores de baixo custo de nível da água, chuva e umidade do solo a cada 15 s e envia as leituras por Wi-Fi a um servidor. As leituras são gravadas em MySQL e classificadas em **Normal**, **Atenção** ou **Risco** por uma árvore de decisão com regras definidas por conhecimento técnico (sistema especialista), em Python. Um painel web mostra os dados, os alertas e o caminho da decisão.
 
@@ -21,7 +64,7 @@ Painel web (navegador) <── Servidor Node.js
 
 1. O ESP32 envia as tensões dos sensores (`POST /readings`).
 2. O servidor valida a leitura, converte as tensões em nível (mm), índice de solo e chuva com a calibração ativa de cada nó e grava no banco.
-3. O classificador aplica a árvore de decisão com o conjunto de limiares ativo e grava a classe.
+3. O classificador aplica a árvore de decisão com o conjunto de limiares ativo. O servidor grava a classe e a regra que determinou o resultado.
 4. O painel mostra o nível de cada ponto, os alertas, o histórico, o simulador da árvore e a entrega das leituras.
 
 ## Estrutura
@@ -33,7 +76,8 @@ Painel web (navegador) <── Servidor Node.js
 | `servidor/` | Servidor Node.js (Express) e painel web (HTML, CSS, JavaScript e Chart.js) |
 | `classificador/` | Serviço Python (FastAPI) com a árvore de decisão |
 | `banco/` | Script SQL único que cria o banco: estrutura, locais, calibrações, limiares e usuário do programa |
-| `calibracao_dados/` | Todas as leituras dos ensaios, de 24 a 28/10/2026, em um único arquivo (`.tsv`) |
+| `calibracao_dados/` | Leituras dos ensaios de 24 a 28 de outubro e de 1º de novembro de 2026, em TSV |
+| `docs/` | Artigo final do TCC em PDF |
 | `iniciar_sistema.bat` | Liga o classificador e o servidor e abre o painel (Windows) |
 | `exportar_leituras.bat` | Exporta as leituras do banco para `calibracao_dados/` |
 
@@ -104,7 +148,7 @@ Dê dois cliques em `iniciar_sistema.bat`. Ele liga o classificador (porta 8000)
 cd servidor
 npm test
 
-cd classificador
+cd ..\classificador
 .venv\Scripts\python -m pytest
 ```
 
@@ -123,7 +167,12 @@ A diferença de 2 mm entre entrar e sair (histerese) evita que o alerta fique li
 
 ## Dados dos ensaios
 
-`calibracao_dados/leituras_2026-10-24_a_2026-10-28.tsv` reúne as 53.292 leituras dos três nós, de 24/10/2026 às 14h35 a 28/10/2026 às 08h05 (horário de Brasília), juntando as exportações feitas durante os ensaios. Colunas separadas por tabulação; `NULL` = sem valor.
+Os horários abaixo seguem o horário de Brasília. Os dois arquivos usam colunas separadas por tabulação e representam valores ausentes com `NULL`.
+
+- **24 a 28 de outubro de 2026.** O arquivo consolidado reúne 53.292 leituras dos três nós, de 24/10 às 14h35 a 28/10 às 08h05. [Baixar dados de outubro](calibracao_dados/leituras_2026-10-24_a_2026-10-28.tsv).
+- **1º de novembro de 2026.** A exportação reúne 873 leituras dos três nós, das 17h35 às 18h48. O artigo analisa 137 leituras da caixa 2 no ensaio que combinou chuva e solo encharcado, com a lâmina na faixa de Atenção. Quando os dois estímulos ocorreram juntos, o sistema indicou Risco nas cinco repetições. [Baixar dados de novembro](calibracao_dados/leituras_2026-11-01_1848.tsv).
+
+Para reproduzir a conversão de tensão em nível, observe a data da calibração. O script de instalação do banco contém o ajuste de outubro da caixa 2 (−79 mV em relação à curva original). O artigo registra um novo ajuste de cerca de +130 mV em 1º de novembro. A coluna `level_depth_mm` preserva o valor calculado no momento de cada leitura.
 
 | Coluna | Significado |
 |---|---|
@@ -145,4 +194,4 @@ A diferença de 2 mm entre entrar e sair (histerese) evita que o alerta fique li
 
 ## Senhas
 
-O `servidor/.env` (senha do banco) e o `no_sensor/config.h` (senha do Wi-Fi)
+Guarde a senha do banco em `servidor/.env` e a do Wi-Fi em `no_sensor/config.h`. O Git ignora esses dois arquivos. Os modelos para configurar outra instalação estão em [env-exemplo.txt](servidor/env-exemplo.txt) e [config.exemplo.h](no_sensor/config.exemplo.h).
